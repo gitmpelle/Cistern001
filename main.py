@@ -142,6 +142,6 @@ if __name__ == "__main__":
             print(f"{getTime()} {gc.threshold(gc.mem_free() // 4 + gc.mem_alloc())}")
             reset()
             
-sleep(10)                    #delay of 10 seconds
+#sleep(10)                    #delay of 10 seconds
 print('Setting to Deep Sleep Mode')
 deepsleep(10000)     #10000ms sleep time
