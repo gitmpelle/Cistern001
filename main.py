@@ -54,19 +54,26 @@ def readChannel(channel):
     voltage = adc.getResult_V()
     return voltage
 
-# Complete project details at https://RandomNerdTutorials.com
+def ota_updater():
+    global ota_updater, client
+    ota_updater.download_and_install_update_if_available()
+    client.publish(topic_pub, '')
 
+# Complete project details at https://RandomNerdTutorials.com
 def sub_cb(topic, msg):
   print((topic, msg))
   if topic == b'notification' and msg == b'received':
     print('ESP received hello message')
-
+    
+  if msg == b'OTA':
+     #ota_updater() 
+     pass
 def connect_and_subscribe():
   global client_id, mqtt_server, topic_sub, topic_pub, port, mqpassword, mquser
   client = MQTTClient(client_id, mqtt_server,user=mquser,password=mqpassword,port=port,keepalive=0)
   client.set_callback(sub_cb)
   client.connect()
-  client.subscribe(topic_sub)
+  client.subscribe(topic_sub,qos=0)
   print('Connected to %s MQTT broker, subscribed to %s topic' % (mqtt_server, topic_sub))
   return client
 
@@ -80,68 +87,60 @@ def restart_and_reconnect():
 # except OSError as e:
 #   restart_and_reconnect()
 
+global client_id, mqtt_server, topic_sub, topic_pub, port, mqpassword, mquser
+client = connect_and_subscribe()
+gc.collect()
+print(f"{getTime()} {gc.threshold(gc.mem_free() // 4 + gc.mem_alloc())}")
+
+gc.collect()
+# Non-blocking wait for message
+
+# try to connecting
+timeout = 10000
+start = time.ticks_ms()
+while True:
+    client.check_msg()
+    diff = time.ticks_diff(time.ticks_ms(), start)
+    if diff > timeout:
+        print('check_msg Timeout')
+        break
+    print('\check_msg %s' % diff, end="\r")
+    time.sleep_ms(1000)
 
 
+PwrDwn.value(0)
+time.sleep(2)
 
+tf = esp32.raw_temperature()
+tc = (tf-32.0)/1.8
+voltage1 = readChannel(ADS1115_COMP_0_GND)*2
+print("Channel 0: {:<4.2f}".format(voltage1))
+voltage2 = ((readChannel(ADS1115_COMP_1_3))-.679)/.0566 # <+12VDC----SENSOR------169R----?GND
+print("Channel 1: {:<4.4f}".format(voltage2))           # 4mA OFFSET 0.679V  0.0566V/IN.  1 FT = .679
+voltage3 = readChannel(ADS1115_COMP_2_GND)
+print("Channel 2: {:<4.2f}".format(voltage3))
+voltage4 = readChannel(ADS1115_COMP_3_GND)
+print("Channel 3: {:<4.2f}".format(voltage4))
+voltage5 = tc
+print("Channel 4: {:<4.2f}".format(voltage5))            
+print("---------------")
 
-def main():
-    global client_id, mqtt_server, topic_sub, topic_pub, port, mqpassword, mquser
-    client = connect_and_subscribe()
-    gc.collect()
-    print(f"{getTime()} {gc.threshold(gc.mem_free() // 4 + gc.mem_alloc())}")
+PwrDwn.value(1)
 
+message = {
+'TIME':getTime(),
+'Voltage1':voltage1,
+'Voltage2':voltage2,
+'Voltage3':voltage3,
+'Voltage4':voltage4,
+'Voltage5':voltage5
+}
+payload = json.dumps(message)
+    
+client.publish(topic_pub, payload)
+  
+time.sleep(10) #delay of 10 seconds
 
-    while True:
-            gc.collect()
-            # Non-blocking wait for message
-            client.check_msg()
-            global last_publish, ring
-            PwrDwn.value(0)
-            time.sleep(2)
-            
-            tf = esp32.raw_temperature()
-            tc = (tf-32.0)/1.8
-            voltage1 = readChannel(ADS1115_COMP_0_GND)*2
-            print("Channel 0: {:<4.2f}".format(voltage1))
-            voltage2 = ((readChannel(ADS1115_COMP_1_3))-.679)/.0566 # <+12VDC----SENSOR------169R----?GND
-            print("Channel 1: {:<4.4f}".format(voltage2))           # 4mA OFFSET 0.679V  0.0566V/IN.  1 FT = .679
-            voltage3 = readChannel(ADS1115_COMP_2_GND)
-            print("Channel 2: {:<4.2f}".format(voltage3))
-            voltage4 = readChannel(ADS1115_COMP_3_GND)
-            print("Channel 3: {:<4.2f}".format(voltage4))
-            voltage5 = tc
-            print("Channel 4: {:<4.2f}".format(voltage5))            
-            print("---------------")
-
-            
-            if (time.time() - last_publish) >= publish_interval:
-                message = {
-                'TIME':getTime(),
-                'Voltage1':voltage1,
-                'Voltage2':voltage2,
-                'Voltage3':voltage3,
-                'Voltage4':voltage4,
-                'Voltage5':voltage5
-                }
-                payload = json.dumps(message)
-                
-                client.publish(topic_pub, payload)
-                last_publish = time.time()
-            PwrDwn.value(1)    
-            time.sleep(1)
-
-
-if __name__ == "__main__":
-    while True:
-        try:
-            client = connect_and_subscribe()
-            main()
-        except Exception as e:
-            sys.print_exception(e)
-            
-            print(f"{getTime()} {gc.threshold(gc.mem_free() // 4 + gc.mem_alloc())}")
-            reset()
-            
-#sleep(10)                    #delay of 10 seconds
+client.disconnect()          
 print('Setting to Deep Sleep Mode')
-#deepsleep(10000)     #10000ms sleep time
+deepsleep(600000)     #10000ms sleep time
