@@ -115,8 +115,8 @@ tf = esp32.raw_temperature()
 tc = (tf-32.0)/1.8
 voltage1 = readChannel(ADS1115_COMP_0_GND)*2
 print("Channel 0: {:<4.2f}".format(voltage1))
-voltage2 = ((readChannel(ADS1115_COMP_1_3))-.679)/.0566 # <+12VDC----SENSOR------169R----?GND
-print("Channel 1: {:<4.4f}".format(voltage2))           # 4mA OFFSET 0.679V  0.0566V/IN.  1 FT = .679
+voltage2 = ((readChannel(ADS1115_COMP_1_3))-.679)/.0066 # <+12VDC----SENSOR------169R----?GND
+print("Channel 1: {:<4.4f}".format(voltage2))           # 4mA OFFSET 0.679V  0.0066V/IN.  1 FT = .079
 voltage3 = readChannel(ADS1115_COMP_2_GND)
 print("Channel 2: {:<4.2f}".format(voltage3))
 voltage4 = readChannel(ADS1115_COMP_3_GND)
@@ -143,4 +143,4 @@ time.sleep(10) #delay of 10 seconds
 
 client.disconnect()          
 print('Setting to Deep Sleep Mode')
-deepsleep(60000)     #10000ms sleep time
+deepsleep(30000)     #10000ms sleep time
