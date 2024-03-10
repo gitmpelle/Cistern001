@@ -119,7 +119,7 @@ voltage2 = ((readChannel(ADS1115_COMP_1_3))-.679)/.0066 # <+12VDC----SENSOR-----
 print("Channel 1: {:<4.4f}".format(voltage2))           # 4mA OFFSET 0.679V  0.0066V/IN.  1 FT = .079
 voltage3 = readChannel(ADS1115_COMP_2_GND)
 print("Channel 2: {:<4.2f}".format(voltage3))
-voltage4 = readChannel(ADS1115_COMP_3_GND)
+voltage4 = readChannel(ADS1115_COMP_1_3)
 print("Channel 3: {:<4.2f}".format(voltage4))
 voltage5 = tc
 print("Channel 4: {:<4.2f}".format(voltage5))            
