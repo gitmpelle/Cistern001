@@ -143,4 +143,4 @@ time.sleep(10) #delay of 10 seconds
 
 client.disconnect()          
 print('Setting to Deep Sleep Mode')
-deepsleep(30000)     #10000ms sleep time
+deepsleep(600000)     #600000ms sleep time
